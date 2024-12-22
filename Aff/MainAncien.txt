@@ -1,0 +1,141 @@
+package Aff;
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+
+import Database.DB;
+import Database.Relation;
+import JDBC.Bridge;
+import JDBC.MyResultSet;
+import ProgSys.Message;
+import ProgSys.MyPacket;
+import ProgSys.Parse;
+import SAVEDATA.TextReader;
+import Serialization.Serialize;
+
+public class MainAncien {
+    // Prog Sys
+    public static void main(String[] args) throws Exception {
+        /// Tsinjo
+        System.out.println("DESERIALIZATION");
+
+        DB db = null;
+
+        db = Serialize.deserialize(getPath());
+
+        // System.out.println(db.getListeRelation().get(3).getName());
+
+        // PROG SYS ////
+        System.out.println("Prog Sys");
+
+        String[] message = Parse.parseIt("select * from CJH where idCours = 'Archi'");
+        // String[] message = new String[3];
+        // message[0] = "1CJH";
+        // message[1] = "idCours = 'Archi' and Jour != 'Ve' or idCours = 'Syst'";
+        // message[2] = "idCours;Jour;heure";
+
+        // Relation sys = Message.translate(message, db);
+
+        // String disp = sys.getDisplay();
+        // System.out.println(disp);
+        // sys.display();
+        System.out.println("====================================");
+
+        // boolean equalsTest = CJH.getData().get(0).equals(CS.getData().get(0));
+        // Creation d'un nuplet temporaire
+
+        // Homme
+        // Attribut Nom1
+       
+        // String newQuery = "insert into Voiture values (Tesla, 2 CV, Durand)";
+        // Voiture.display();
+        // Test du produit cartesien
+        // Relation prod = Relation.produitCartesien(Voiture, Homme, "h", "v");
+
+        // PROG SYS ////
+
+        int port = Main.getPort(); // Port number the server will listen on
+        ServerSocket serverSocket = null;
+        Socket socket = null;
+        // try {
+        serverSocket = new ServerSocket(port);
+        System.out.println("Server is listening on port " + port);
+        socket = serverSocket.accept();
+
+        // Input and output streams
+        ObjectOutputStream outStream = new
+        ObjectOutputStream(socket.getOutputStream());
+
+        BufferedReader input = new BufferedReader(new
+        InputStreamReader(socket.getInputStream()));
+        PrintWriter output = new PrintWriter(socket.getOutputStream(), true);
+
+        // Communication loop
+        String clientMessage;
+        while ((clientMessage = input.readLine()) != null) {
+            System.out.println("Client: " + clientMessage);
+            if ("exit".equalsIgnoreCase(clientMessage)) {
+                System.out.println("Client disconnected");
+                break;
+            } try {
+                // System.out.println("a");
+                String[] parseMessage = Parse.parseIt(clientMessage);
+                // System.out.println("b");
+                Relation temp = Message.translate(parseMessage, db);
+                // System.out.println("c");
+                if(temp != null)
+                temp.display();
+                // rs.next();
+                // System.out.println("here = " + rs.getString(1));
+                if(temp == null) throw new Exception("inserted");
+                outStream.writeObject(temp);
+                System.out.println("heree");
+            } catch (Exception e) {
+                System.out.println("Server: " + e.getMessage());
+                outStream.writeObject(
+                new MyPacket("Exception occured, please verify errors in your message and retry again\nError: "
+                + e.getMessage()));
+            }
+        }
+        // } catch (IOException ex) {
+        // System.out.println("Server error: " + ex.getMessage());
+        // ex.printStackTrace();
+        // } finally {
+        try {
+            Serialize.serialize(getPath(), db);
+        if (socket != null && !socket.isClosed()) {
+        socket.close();
+        System.out.println("Client socket closed.");
+        }
+        if (serverSocket != null && !serverSocket.isClosed()) {
+        serverSocket.close();
+        System.out.println("Server socket closed.");
+        }
+        } catch (IOException e) {
+        System.err.println("Error closing sockets: " + e.getMessage());
+        }
+    }
+
+    public static String getPath() throws FileNotFoundException, IOException {
+        TextReader textReader = new TextReader();
+        ArrayList<String[]> data = textReader.getFileData("Conf.txt");
+        String path = data.get(1)[1];
+        return path;
+    }
+
+    public static int getPort() throws FileNotFoundException, IOException {
+        TextReader textReader = new TextReader();
+        ArrayList<String[]> data = textReader.getFileData("Conf.txt");
+        String port = data.get(0)[1];
+        return Integer.parseInt(port);
+    }
+
+}

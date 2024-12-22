@@ -1,0 +1,4 @@
+port=104
+path=C:/Users/Titix/Desktop/SGBD/save/db.ser
+temp
+path=C:/Users/Titix/Desktop/SGBD/save/dbRep.ser
